@@ -1,0 +1,127 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: my-project
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-dotenv-plugin
+  - serverless-offline
+  - serverless-dynamodb-local
+
+
+custom:
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+    migration:
+      dir: offline/migrations
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-west-2
+  environment:
+    LOCALE: en_US
+    APIKEY: ''
+    TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAMS}"
+
+# you can add packaging information here
+package:
+  include:
+    - handler.ts
+  exclude:
+    - node_modules/**
+    - '!node_modules/axios/**'
+    - '!node_modules/follow-redirects/**'
+    - '!node_modules/is-buffer/**'
+    - '!node_modules/debug/**'
+    - '!node_modules/ms/**'
+    - '!node_modules/blizzy-core/**'
+
+functions:
+  create:
+    handler: handler.createRaidTeam
+    events:
+      - http:
+          path: raid-teams
+          method: post
+          cors: true
+
+  list:
+    handler: handler.listRaidTeams
+    events:
+      - http:
+          path: raid-teams
+          method: get
+          cors: true
+
+  retrieve:
+    handler: handler.retrieveRaidTeam
+    events:
+      - http:
+          path: raid-teams/{id}
+          method: get
+          cors: true
+
+  update:
+    handler: handler.updateRaidTeam
+    events:
+      - http:
+          path: raid-teams/{id}
+          method: put
+          cors: true
+
+  delete:
+    handler: handler.deleteRaidTeam
+    events:
+      - http:
+          path: raid-teams/{id}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    GuildsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TABLE_RAID_TEAMS}

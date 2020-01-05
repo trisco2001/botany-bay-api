@@ -1,0 +1,26 @@
+{
+  "name": "my-project",
+  "version": "1.0.0",
+  "description": "Test project for offline serverless dynamo db testing.",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tristan Leonard",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.24",
+    "@types/node": "^11.13.5",
+    "serverless-dotenv-plugin": "^2.0.1",
+    "serverless-dynamodb-local": "^0.2.37",
+    "serverless-offline": "^4.9.4",
+    "serverless-plugin-typescript": "^1.1.7",
+    "typescript": "^3.4.4"
+  },
+  "dependencies": {
+    "@types/uuid": "^3.4.4",
+    "axios": "^0.18.1",
+    "blizzy-core": "^1.22.0",
+    "uuid": "^3.3.2"
+  }
+}
