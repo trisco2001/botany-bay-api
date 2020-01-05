@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: my-project
+service: botany-bay-api
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -42,6 +42,7 @@ provider:
     LOCALE: en_US
     APIKEY: ''
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
+    TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -109,7 +110,7 @@ functions:
 
 resources:
   Resources:
-    GuildsDynamoDbTable:
+    RaidTeamsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Delete
       Properties:
@@ -125,3 +126,20 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.TABLE_RAID_TEAMS}
+
+    RaidTeamMembersDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TABLE_RAID_TEAM_MEMBERS}
