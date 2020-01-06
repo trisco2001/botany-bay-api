@@ -68,7 +68,7 @@ package:
     - '!node_modules/blizzy-core/**'
 
 functions:
-  create:
+  createRaidTeam:
     handler: handler.createRaidTeam
     events:
       - http:
@@ -76,7 +76,7 @@ functions:
           method: post
           cors: true
 
-  list:
+  listRaidTeam:
     handler: handler.listRaidTeams
     events:
       - http:
@@ -84,7 +84,7 @@ functions:
           method: get
           cors: true
 
-  retrieve:
+  retrieveRaidTeam:
     handler: handler.retrieveRaidTeam
     events:
       - http:
@@ -92,7 +92,7 @@ functions:
           method: get
           cors: true
 
-  update:
+  updateRaidTeam:
     handler: handler.updateRaidTeam
     events:
       - http:
@@ -100,11 +100,51 @@ functions:
           method: put
           cors: true
 
-  delete:
+  deleteRaidTeam:
     handler: handler.deleteRaidTeam
     events:
       - http:
           path: raid-teams/{id}
+          method: delete
+          cors: true
+
+  createTeamMember:
+    handler: handler.createTeamMember
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members
+          method: post
+          cors: true
+
+  listTeamMember:
+    handler: handler.listTeamMembers
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members
+          method: get
+          cors: true
+
+  retrieveTeamMember:
+    handler: handler.retrieveTeamMember
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members/{id}
+          method: get
+          cors: true
+
+  updateTeamMember:
+    handler: handler.updateTeamMember
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members/{id}
+          method: put
+          cors: true
+
+  deleteTeamMember:
+    handler: handler.deleteTeamMember
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members/{id}
           method: delete
           cors: true
 
@@ -135,10 +175,16 @@ resources:
           -
             AttributeName: id
             AttributeType: S
+          -
+            AttributeName: raidTeamId
+            AttributeType: S
         KeySchema:
           -
-            AttributeName: id
+            AttributeName: raidTeamId
             KeyType: HASH
+          -
+            AttributeName: id
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
