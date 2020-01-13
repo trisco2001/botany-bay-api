@@ -13,11 +13,13 @@ const updateRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
     const timestamp = new Date().getTime();
     const gatewayEventInteractor = new GatewayEventInteractor(event)
 
+    const raidTeamId = gatewayEventInteractor.path("raidTeamId")
     const id = gatewayEventInteractor.path("id")
 
     const params = {
         TableName: process.env.TABLE_RAID_TEAM_MEMBERS,
         Key: {
+            raidTeamId: raidTeamId,
             id: id,
         },
         ExpressionAttributeNames: {

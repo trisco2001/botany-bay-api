@@ -20,9 +20,9 @@ service: botany-bay-api
 plugins:
   - serverless-plugin-typescript
   - serverless-dotenv-plugin
-  - serverless-offline
   - serverless-dynamodb-local
-
+  - serverless-offline-dynamodb-streams
+  - serverless-offline
 
 custom:
   dynamodb:
@@ -33,6 +33,15 @@ custom:
     migration:
       dir: offline/migrations
 
+  serverless-offline-dynamodb-streams:
+    apiVersion: '2013-12-02'
+    endpoint: http://0.0.0.0:8000
+    region: eu-west-1
+    accessKeyId: root
+    secretAccessKey: root
+    skipCacheInvalidation: false
+    readInterval: 500
+
 provider:
   name: aws
   runtime: nodejs12.x
@@ -41,6 +50,7 @@ provider:
   environment:
     LOCALE: en_US
     APIKEY: ''
+    BASE_URL: https://us.api.blizzard.com
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
   iamRoleStatements:
@@ -68,6 +78,20 @@ package:
     - '!node_modules/blizzy-core/**'
 
 functions:
+
+  raidTeamChangedStreamHandler:
+    handler: handler.lookupCharacterStreamHandler
+    events:
+      - stream:
+          enabled: true
+          type: dynamodb
+          arn: 
+            Fn::GetAtt:
+              - RaidTeamMembersDynamoDbTable
+              - Arn
+          batchSize: 10
+          startingPosition: TRIM_HORIZON
+  
   createRaidTeam:
     handler: handler.createRaidTeam
     events:
@@ -189,3 +213,5 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.TABLE_RAID_TEAM_MEMBERS}
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES 

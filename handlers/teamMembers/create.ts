@@ -13,23 +13,34 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
     const gatewayEventInteractor = new GatewayEventInteractor(event)
     const data = JSON.parse(event.body)
     const timestamp = new Date().getTime();
-    const id = uuid();
+    const name = data.name;
+    const server = data.server;
     const raidTeamId = gatewayEventInteractor.path("raidTeamId")
+    const id = `${raidTeamId}-${server}-${name}`;
 
     const params = {
         TableName: process.env.TABLE_RAID_TEAM_MEMBERS,
-        Item: {
+        Key: {
             raidTeamId: raidTeamId,
-            id: id,
-            server: data.server,
-            name: data.name,
-            createdAt: timestamp,
-            updatedAt: timestamp,
+            id: id
         },
-        ReturnValues: 'ALL_OLD',
+        UpdateExpression: "SET #server = :server, #name = :name, #createdAt = :createdAt, #updatedAt = :updatedAt",
+        ExpressionAttributeNames: {
+            '#server': 'server',
+            '#name': 'name',
+            '#createdAt': 'createdAt',
+            '#updatedAt': 'updatedAt'
+        },
+        ExpressionAttributeValues: {
+            ':server': data.server,
+            ':name': data.name,
+            ':createdAt': timestamp,
+            ':updatedAt': timestamp,
+        },
+        ReturnValues: 'UPDATED_NEW',
     };
 
-    dynamodb.put(params, function(err: any, data: any) {
+    dynamodb.update(params, function(err: any, data: any) {
         if (err) {
             console.log(err)
             const response: BasicResponse = {
