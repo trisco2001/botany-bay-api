@@ -15,24 +15,7 @@ const updateRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
 
     const id = gatewayEventInteractor.path("id")
 
-    const params = {
-        TableName: process.env.TABLE_RAID_TEAMS,
-        Key: {
-            id: id,
-        },
-        ExpressionAttributeNames: {
-            '#server': 'server',
-            '#name': 'name',
-            '#updatedAt': 'updatedAt'
-        },
-        ExpressionAttributeValues: {
-            ':server': data.server,
-            ':name': data.name,
-            ':updatedAt': timestamp,
-        },
-        UpdateExpression: 'SET #name = :name, #server = :server, #updatedAt = :updatedAt',
-        ReturnValues: 'ALL_NEW',
-    };
+    const params = createUpdateParams(id, data, timestamp);
 
     dynamodb.update(params, function (err: any, data: any) {
         if (err) {
@@ -56,3 +39,24 @@ const updateRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
 }
 
 export default updateRaidTeam
+
+function createUpdateParams(id: string, data: {name: string, server: string}, timestamp: number) {
+    return {
+        TableName: process.env.TABLE_RAID_TEAMS,
+        Key: {
+            id: id,
+        },
+        ExpressionAttributeNames: {
+            '#server': 'server',
+            '#name': 'name',
+            '#updatedAt': 'updatedAt'
+        },
+        ExpressionAttributeValues: {
+            ':server': data.server,
+            ':name': data.name,
+            ':updatedAt': timestamp,
+        },
+        UpdateExpression: 'SET #name = :name, #server = :server, #updatedAt = :updatedAt',
+        ReturnValues: 'ALL_NEW',
+    };
+}
