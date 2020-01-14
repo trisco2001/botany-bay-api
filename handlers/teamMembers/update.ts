@@ -23,18 +23,20 @@ const updateRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
             id: id,
         },
         ExpressionAttributeNames: {
-            '#server': 'server',
-            '#name': 'name',
             '#updatedAt': 'updatedAt'
         },
         ExpressionAttributeValues: {
-            ':server': data.server,
-            ':name': data.name,
             ':updatedAt': timestamp,
         },
-        UpdateExpression: 'SET #name = :name, #server = :server, #updatedAt = :updatedAt',
+        UpdateExpression: 'SET #updatedAt = :updatedAt',
         ReturnValues: 'ALL_NEW',
     };
+
+    if (data.role) {
+        params.ExpressionAttributeNames['#role'] = 'role';
+        params.ExpressionAttributeValues[':role'] = data.role;
+        params.UpdateExpression = `${params.UpdateExpression}, #role = :role`;
+    }
 
     dynamodb.update(params, function (err: any, data: any) {
         if (err) {
