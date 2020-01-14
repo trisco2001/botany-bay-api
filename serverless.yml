@@ -51,6 +51,7 @@ provider:
     LOCALE: en_US
     APIKEY: ''
     BASE_URL: https://us.api.blizzard.com
+    TABLE_WEB_HOOKS: ${self:service}-${opt:stage, self:provider.stage}-WebHookConnections
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
   iamRoleStatements:
@@ -172,8 +173,50 @@ functions:
           method: delete
           cors: true
 
+  connectWebhook:
+    handler: handlers/webhooks/handlers.connect
+    events:
+      - websocket:
+          route: $connect
+
+  disconnectWebhook:
+    handler: handlers/webhooks/handlers.disconnect
+    events:
+      - websocket:
+          route: $disconnect
+
 resources:
   Resources:
+    WebHooksDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: connectionId
+            AttributeType: S
+          -
+            AttributeName: raidTeamId
+            AttributeType: S
+        KeySchema:
+          -  
+            AttributeName: connectionId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TABLE_WEB_HOOKS}
+        GlobalSecondaryIndexes:
+          - IndexName: gsi_raid_team_id
+            KeySchema:
+            - AttributeName: raidTeamId
+              KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: '5'
+              WriteCapacityUnits: '5'
+
     RaidTeamsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Delete

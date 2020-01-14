@@ -4,6 +4,7 @@ import { CharacterService, BlizzyService } from "blizzy-core";
 import { RequesterService } from "blizzy-core/dist/services/requesterService";
 import { Environment } from "../../environment";
 import dynamodb from './dynamodb';
+const AWS = require('aws-sdk');
 
 class BotanyBayRaidTeamService {
     saveCharacterInfoToTeamMember(raidTeamId: string, raidTeamMemberId: string, insertedCharacter: any) {
@@ -62,6 +63,38 @@ const blizzyService = new BlizzyService(requesterService);
 const blizzardCharacterService = new CharacterService(blizzyService);
 const botanyBayRaidTeamService = new BotanyBayRaidTeamService();
 
+function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string) {
+    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+		apiVersion: '2018-11-29',
+	    endpoint: 'http://localhost:3001'
+    });
+    const params = {
+        TableName: process.env.TABLE_WEB_HOOKS,
+        IndexName: 'gsi_raid_team_id',
+        ExpressionAttributeNames: {
+            '#raidTeamId': 'raidTeamId',
+        },
+        ExpressionAttributeValues: {
+            ':raidTeamId': raidTeamId
+        },
+        KeyConditionExpression: "#raidTeamId = :raidTeamId"
+    };
+    dynamodb.query(params, function (err: any, data: any) {
+        const matchingItems = data.Items.filter(item => item.raidTeamId == raidTeamId);
+        const promises = matchingItems.map(item => {
+            const connectionId = item.connectionId;
+            console.log(`** signalling web socket ${connectionId}`);
+            return apigwManagementApi.postToConnection({
+                ConnectionId: connectionId,
+                Data: JSON.stringify({raidTeamId, teamMemberId})
+            }).promise();
+        });
+        Promise.all(promises).then(results => {
+            console.log("signalled websockets")
+        })
+    })
+}
+
 const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, context: Context, callback: Callback) => {
 
     event.Records.forEach(async record => {
@@ -93,6 +126,7 @@ const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, conte
                 console.log(`character ${name}-${server} found! saving character`);
                 const characterObject = JSON.parse(blizzardCharacterResponse.body);
                 botanyBayRaidTeamService.saveCharacterInfoToTeamMember(raidTeamId, id, characterObject);
+                signalExtendedInfoWithWebhook(raidTeamId, id);
             }
         } else if (record.eventName == "REMOVE") {
             botanyBayRaidTeamService.removeCharacterFromRaidTeam(raidTeamId, server, name);

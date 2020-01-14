@@ -17,6 +17,7 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
     const server = data.server;
     const raidTeamId = gatewayEventInteractor.path("raidTeamId")
     const id = `${raidTeamId}-${server}-${name}`;
+    const webSocketUrl = `ws://localhost:3001?raidTeamId=${raidTeamId}`;
 
     const params = {
         TableName: process.env.TABLE_RAID_TEAM_MEMBERS,
@@ -35,7 +36,7 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             ':server': data.server,
             ':name': data.name,
             ':createdAt': timestamp,
-            ':updatedAt': timestamp,
+            ':updatedAt': timestamp
         },
         ReturnValues: 'UPDATED_NEW',
     };
@@ -51,7 +52,7 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             callback(err, response)
         }
         else {
-            const customData = {id};
+            const customData = {id, webSocketUrl};
             console.log(customData)
             const response = {
                 statusCode: 200,
