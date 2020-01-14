@@ -63,7 +63,7 @@ const blizzyService = new BlizzyService(requesterService);
 const blizzardCharacterService = new CharacterService(blizzyService);
 const botanyBayRaidTeamService = new BotanyBayRaidTeamService();
 
-function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string) {
+function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string, server: string, name: string, characterData: any) {
     const apigwManagementApi = new AWS.ApiGatewayManagementApi({
 		apiVersion: '2018-11-29',
 	    endpoint: 'http://localhost:3001'
@@ -86,7 +86,7 @@ function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string)
             console.log(`** signalling web socket ${connectionId}`);
             return apigwManagementApi.postToConnection({
                 ConnectionId: connectionId,
-                Data: JSON.stringify({raidTeamId, teamMemberId})
+                Data: JSON.stringify({raidTeamId, id: teamMemberId, server, name, characterData})
             }).promise();
         });
         Promise.all(promises).then(results => {
@@ -126,7 +126,7 @@ const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, conte
                 console.log(`character ${name}-${server} found! saving character`);
                 const characterObject = JSON.parse(blizzardCharacterResponse.body);
                 botanyBayRaidTeamService.saveCharacterInfoToTeamMember(raidTeamId, id, characterObject);
-                signalExtendedInfoWithWebhook(raidTeamId, id);
+                signalExtendedInfoWithWebhook(raidTeamId, id, server, name, characterObject);
             }
         } else if (record.eventName == "REMOVE") {
             botanyBayRaidTeamService.removeCharacterFromRaidTeam(raidTeamId, server, name);
