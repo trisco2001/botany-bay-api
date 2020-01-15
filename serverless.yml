@@ -53,8 +53,6 @@ provider:
     LOCALE: en_US
     APIKEY: ''
     BASE_URL: https://us.api.blizzard.com
-    ACCESS_KEY: AKIAJ7M3EIUPJSXJ54HQ
-    SECRET_ACCESS_KEY: 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
     TABLE_WEB_HOOKS: ${self:service}-${opt:stage, self:provider.stage}-WebHookConnections
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers

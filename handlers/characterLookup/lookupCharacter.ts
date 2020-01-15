@@ -89,8 +89,6 @@ function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string,
             const apigwManagementApi = new ApiGatewayManagementApi({
                 apiVersion: '2018-11-29',
                 region: 'us-west-2',
-                accessKeyId: process.env.ACCESS_KEY,
-                secretAccessKey: process.env.SECRET_ACCESS_KEY,
                 endpoint: process.env.IS_OFFLINE ? `http://localhost:3001` : `${process.env.WEB_SOCKET_ENDPOINT_HTTP}`
             });
             return apigwManagementApi.postToConnection({
