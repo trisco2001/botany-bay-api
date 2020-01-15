@@ -2,7 +2,7 @@ import { Handler, Context, Callback, APIGatewayProxyEvent } from "aws-lambda"
 import { BasicResponses, BasicResponse, GatewayEventInteractor } from "blizzy-core";
 
 import { v4 as uuid } from "uuid";
-import dynamodb from './dynamodb';
+import dynamodb from '../dynamodb';
 
 const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, callback: Callback) => {
     if (typeof event.body !== 'string') {
@@ -17,7 +17,7 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
     const server = data.server;
     const raidTeamId = gatewayEventInteractor.path("raidTeamId")
     const id = `${raidTeamId}-${server}-${name}`;
-    const webSocketUrl = `ws://localhost:3001?raidTeamId=${raidTeamId}`;
+    const webSocketUrl = process.env.IS_OFFLINE ? `ws://localhost:3001?raidTeamId=${raidTeamId}` : `${process.env.WEB_SOCKET_ENDPOINT_WS}?raidTeamId=${raidTeamId}`
 
     const params = {
         TableName: process.env.TABLE_RAID_TEAM_MEMBERS,
@@ -46,7 +46,10 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(err)
             const response: BasicResponse = {
                 statusCode: 500,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(err),
             }
             callback(err, response)
@@ -56,6 +59,10 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(customData)
             const response = {
                 statusCode: 200,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(customData),
             };
             callback(null, response)

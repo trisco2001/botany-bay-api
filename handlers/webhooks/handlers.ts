@@ -1,6 +1,4 @@
-import dynamodb from './dynamodb';
-
-const AWS = require('aws-sdk');
+import dynamodb from '../dynamodb';
 
 exports.connect = function(event, context, callback) {
     console.log(`** web socket connected! ${event.requestContext.connectionId}`);
@@ -17,6 +15,10 @@ exports.connect = function(event, context, callback) {
         dynamodb.put(putParams, function(err, data) {
             callback(null, {
             statusCode: err ? 500 : 200,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Credentials': true,
+            },
             body: err ? "Failed to connect: " + JSON.stringify(err) : "Connected"
             });
         });
@@ -39,6 +41,10 @@ exports.disconnect = function(event, context, callback) {
         dynamodb.delete(deleteParams, function(err, data) {
             callback(null, {
             statusCode: err ? 500 : 200,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Credentials': true,
+            },
             body: err ? "Failed to connect: " + JSON.stringify(err) : "Connected"
             });
         });
@@ -46,3 +52,15 @@ exports.disconnect = function(event, context, callback) {
         console.log(error)
     }
 };
+
+exports.default = function(event, context, callback) {
+    console.log(`** web socket default: ${event.requestContext.connectionId}`);
+    callback(null, {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true,
+        },
+        body: "Working"
+    });
+}

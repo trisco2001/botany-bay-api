@@ -2,7 +2,7 @@ import { Handler, Context, Callback, APIGatewayProxyEvent } from "aws-lambda"
 import { BasicResponses, BasicResponse } from "blizzy-core";
 
 import { v4 as uuid } from "uuid";
-import dynamodb from './dynamodb';
+import dynamodb from '../dynamodb';
 
 const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, callback: Callback) => {
     if (typeof event.body !== 'string') {
@@ -31,7 +31,10 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(err)
             const response: BasicResponse = {
                 statusCode: 500,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(err),
             }
             callback(err, response)
@@ -41,6 +44,10 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(customData)
             const response = {
                 statusCode: 200,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(customData),
             };
             callback(null, response)

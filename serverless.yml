@@ -47,13 +47,25 @@ provider:
   runtime: nodejs12.x
   stage: dev
   region: us-west-2
+  logs:
+    websocket: true
   environment:
     LOCALE: en_US
     APIKEY: ''
     BASE_URL: https://us.api.blizzard.com
+    ACCESS_KEY: AKIAJ7M3EIUPJSXJ54HQ
+    SECRET_ACCESS_KEY: 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
     TABLE_WEB_HOOKS: ${self:service}-${opt:stage, self:provider.stage}-WebHookConnections
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
+    WEB_SOCKET_ENDPOINT_WS: !Join ['', ['wss://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}"]]
+    WEB_SOCKET_ENDPOINT_HTTP: !Join ['', ['https://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}/"]]
+  resourcePolicy:
+    - Effect: Allow
+      Principal: '*'
+      Action: execute-api:Invoke
+      Resource:
+        - execute-api:/*/*/*
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -63,7 +75,17 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAMS}"
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_WEB_HOOKS}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_WEB_HOOKS}/index/*"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAMS}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAM_MEMBERS}"
+    - Effect: Allow
+      Action:
+        - execute-api:Invoke
+        - execute-api:ManageConnections
+      Resource:
+        - "arn:aws:execute-api:*:*:*/*/*"
 
 # you can add packaging information here
 package:
@@ -77,6 +99,7 @@ package:
     - '!node_modules/debug/**'
     - '!node_modules/ms/**'
     - '!node_modules/blizzy-core/**'
+    - '!node_modules/uuid/**'
 
 functions:
 
@@ -86,10 +109,7 @@ functions:
       - stream:
           enabled: true
           type: dynamodb
-          arn: 
-            Fn::GetAtt:
-              - RaidTeamMembersDynamoDbTable
-              - Arn
+          arn: !GetAtt RaidTeamMembersDynamoDbTable.StreamArn
           batchSize: 10
           startingPosition: TRIM_HORIZON
   
@@ -113,7 +133,7 @@ functions:
     handler: handler.retrieveRaidTeam
     events:
       - http:
-          path: raid-teams/{id}
+          path: raid-teams/{raidTeamId}
           method: get
           cors: true
 
@@ -121,7 +141,7 @@ functions:
     handler: handler.updateRaidTeam
     events:
       - http:
-          path: raid-teams/{id}
+          path: raid-teams/{raidTeamId}
           method: put
           cors: true
 
@@ -129,7 +149,7 @@ functions:
     handler: handler.deleteRaidTeam
     events:
       - http:
-          path: raid-teams/{id}
+          path: raid-teams/{raidTeamId}
           method: delete
           cors: true
 
@@ -184,6 +204,12 @@ functions:
     events:
       - websocket:
           route: $disconnect
+
+  defaultWebhook:
+    handler: handlers/webhooks/handlers.default
+    events:
+      - websocket:
+          route: $default
 
 resources:
   Resources:

@@ -1,7 +1,7 @@
 import { Handler, Context, Callback, APIGatewayProxyEvent } from "aws-lambda"
 import { BasicResponse, GatewayEventInteractor } from "blizzy-core";
 
-import dynamodb from './dynamodb';
+import dynamodb from '../dynamodb';
 
 const deleteRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, callback: Callback) => {
     const gatewayEventInteractor = new GatewayEventInteractor(event)
@@ -22,7 +22,10 @@ const deleteRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(err)
             const response: BasicResponse = {
                 statusCode: 500,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(err),
             }
             callback(err, response)
@@ -31,6 +34,10 @@ const deleteRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
             console.log(data)
             const response = {
                 statusCode: 200,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Credentials': true,
+                },
                 body: JSON.stringify(data),
             };
             callback(null, response)
