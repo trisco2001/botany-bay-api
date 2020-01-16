@@ -11,21 +11,23 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.24",
     "@types/node": "^11.13.5",
-    "utf-8-validate": "^5.0.2",
-    "ws": "^7.2.1",
     "bufferutil": "^4.0.1",
     "serverless": "^1.48.1",
     "serverless-dotenv-plugin": "^2.0.1",
     "serverless-dynamodb-local": "^0.2.37",
     "serverless-offline": "^5.11.0",
-    "serverless-plugin-typescript": "^1.1.7",
     "serverless-offline-dynamodb-streams": "^3.0.1",
-    "typescript": "^3.4.4"
+    "serverless-offline-scheduler": "^0.4.0",
+    "serverless-plugin-typescript": "^1.1.7",
+    "typescript": "^3.4.4",
+    "utf-8-validate": "^5.0.2",
+    "ws": "^7.2.1"
   },
   "dependencies": {
     "@types/uuid": "^3.4.4",
     "axios": "^0.18.1",
     "blizzy-core": "^1.22.0",
+    "underscore": "^1.9.2",
     "uuid": "^3.3.2"
   }
 }

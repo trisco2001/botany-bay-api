@@ -23,6 +23,7 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline-dynamodb-streams
   - serverless-offline
+  - serverless-offline-scheduler
 
 custom:
   dynamodb:
@@ -56,6 +57,7 @@ provider:
     TABLE_WEB_HOOKS: ${self:service}-${opt:stage, self:provider.stage}-WebHookConnections
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
+    TABLE_CHARACTER_METRICS: ${self:service}-${opt:stage, self:provider.stage}-CharacterMetrics
     WEB_SOCKET_ENDPOINT_WS: !Join ['', ['wss://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}"]]
     WEB_SOCKET_ENDPOINT_HTTP: !Join ['', ['https://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}/"]]
   resourcePolicy:
@@ -100,6 +102,10 @@ package:
     - '!node_modules/uuid/**'
 
 functions:
+  refreshItemLevels:
+    handler: handlers/characterLookup/refreshItemLevel.handler
+    events:
+      - schedule: rate(30 minutes)
 
   raidTeamChangedStreamHandler:
     handler: handler.lookupCharacterStreamHandler
@@ -257,6 +263,29 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.TABLE_RAID_TEAMS}
+
+    CharacterMetricsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: raidTeamMemberId
+            AttributeType: S
+          -
+            AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          -
+            AttributeName: raidTeamMemberId
+            KeyType: HASH
+          -
+            AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.TABLE_CHARACTER_METRICS}
 
     RaidTeamMembersDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'

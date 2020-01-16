@@ -6,6 +6,49 @@ import { RequesterService } from "blizzy-core/dist/services/requesterService";
 import { Environment } from "../../environment";
 
 import dynamodb from '../dynamodb';
+import { isNullOrUndefined } from "util";
+
+class CharacterMetricService {
+    saveCharacterMetric(raidTeamMemberId: string, calculatedItemLevel: number) {
+        console.log(`Saving character metric: ${raidTeamMemberId} - ${calculatedItemLevel}`);
+        const timestamp = new Date().getTime();
+        const params = {
+            TableName: process.env.TABLE_CHARACTER_METRICS,
+            Item: {
+                raidTeamMemberId: raidTeamMemberId,
+                timestamp: timestamp,
+                averageItemLevel: calculatedItemLevel
+            },
+            ReturnValues: 'ALL_OLD',
+        };
+    
+        dynamodb.put(params, function (err: any, data: any) {
+            if (err) {
+                console.log(`Failed to set character data for ${raidTeamMemberId}: ${err}`)
+            }
+        })
+    }
+}
+
+class TeamMemberItemLevelUtility {
+    static calculateItemLevel(characterInfo) {
+        if (!characterInfo || !characterInfo.items) {
+            return 0;
+        }
+        
+        const items = characterInfo.items;
+        const slots = ['back', 'chest', 'feet', 'finger1', 'finger2', 'hands', 'head', 'legs', 'mainHand', 'offHand', 'neck', 'shoulder', 'trinket1', 'trinket2', 'waist', 'wrist'];
+        const equippedSlots = slots.filter(slot => !isNullOrUndefined(items[slot]));
+        const equippedItemLevels = equippedSlots.map(slot => items[slot].itemLevel);
+        if (equippedItemLevels.length == 0) {
+            return 0;
+        }
+        const totalItemLevel = equippedItemLevels.reduce((a, b) => a + b);
+        const averageItemLevel = totalItemLevel / equippedSlots.length;
+        console.log(`averageItemLevel: ${averageItemLevel} over ${equippedItemLevels.length} equipped items`);
+        return averageItemLevel;
+    }
+}
 
 class BotanyBayRaidTeamService {
     saveCharacterInfoToTeamMember(raidTeamId: string, raidTeamMemberId: string, insertedCharacter: any) {
@@ -59,6 +102,7 @@ const requesterService = new RequesterService(environment, "USp0m1RVU3OYiPwlsEli
 const blizzyService = new BlizzyService(requesterService);
 const blizzardCharacterService = new CharacterService(blizzyService);
 const botanyBayRaidTeamService = new BotanyBayRaidTeamService();
+const characterMetricService = new CharacterMetricService();
 
 function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string, server: string, name: string, characterData: any) {
     
@@ -129,6 +173,8 @@ const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, conte
             else if (blizzardCharacterResponse.statusCode == 200) {
                 const characterObject = JSON.parse(blizzardCharacterResponse.body);
                 botanyBayRaidTeamService.saveCharacterInfoToTeamMember(raidTeamId, id, characterObject);
+                const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(characterObject);
+                characterMetricService.saveCharacterMetric(id, calculatedItemLevel);
                 try {
                     signalExtendedInfoWithWebhook(raidTeamId, id, server, name, characterObject);
                 } catch (error) {
