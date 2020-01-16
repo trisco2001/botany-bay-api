@@ -24,7 +24,6 @@ const raidTeamsList: Handler = (event: APIGatewayProxyEvent, context: Context, c
             callback(err, response)
         }
         else {
-            console.log(data)
             const response = {
                 statusCode: 200,
                 headers: {

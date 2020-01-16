@@ -9,7 +9,6 @@ import dynamodb from '../dynamodb';
 
 class BotanyBayRaidTeamService {
     saveCharacterInfoToTeamMember(raidTeamId: string, raidTeamMemberId: string, insertedCharacter: any) {
-        console.log(`${raidTeamId} <= ${raidTeamMemberId}`);
         const timestamp = new Date().getTime();
         const removeEmpty = obj => {
             const newObj = {};
@@ -47,9 +46,6 @@ class BotanyBayRaidTeamService {
             if (err) {
                 console.log(`Failed to set character data for ${raidTeamMemberId}: ${err}`)
             }
-            else {
-                console.log(`Successfully set character data for ${raidTeamMemberId}`)
-            }
         })
     }
     
@@ -84,8 +80,6 @@ function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string,
         const matchingItems = data.Items.filter(item => item.raidTeamId == raidTeamId);
         const promises = matchingItems.map(item => {
             const connectionId = item.connectionId;
-            console.log(`** signalling web socket ${connectionId} with:`);
-            console.log(JSON.stringify({raidTeamId, id: teamMemberId, server, name, characterData}));
             const apigwManagementApi = new ApiGatewayManagementApi({
                 apiVersion: '2018-11-29',
                 region: 'us-west-2',
@@ -98,7 +92,6 @@ function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string,
         });
         Promise.all(promises)
         .then(results => {
-            console.log("signalled websockets");
         })
         .catch(error => {
             console.log(`error signalling websockets: ${error}`);
@@ -107,7 +100,6 @@ function signalExtendedInfoWithWebhook(raidTeamId: string, teamMemberId: string,
 }
 
 const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, context: Context, callback: Callback) => {
-    console.log("Streaming character detected!");
     event.Records.forEach(async record => {
         // Look for an existing record in the character info page
         const image = record.dynamodb.NewImage;
@@ -124,8 +116,6 @@ const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, conte
         const name = image.name.S;
         const raidTeamId = image.raidTeamId.S;
 
-        console.log(`Adding ${name} from ${server} to raid team ID ${raidTeamId}`);
-
         if (!server || !name || !raidTeamId) {
             return;
         }
@@ -134,11 +124,9 @@ const lookupCharacterStreamHandler: Handler = (event: DynamoDBStreamEvent, conte
             
             const blizzardCharacterResponse = await blizzardCharacterService.getCharacterInfo(name, server);
             if (blizzardCharacterResponse.statusCode == 404) {
-                console.log(`character ${name}-${server} not found on blizzard`);
                 return;
             }
             else if (blizzardCharacterResponse.statusCode == 200) {
-                console.log(`character ${name}-${server} found! saving character`);
                 const characterObject = JSON.parse(blizzardCharacterResponse.body);
                 botanyBayRaidTeamService.saveCharacterInfoToTeamMember(raidTeamId, id, characterObject);
                 try {

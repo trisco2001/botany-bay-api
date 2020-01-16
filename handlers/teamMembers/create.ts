@@ -56,7 +56,6 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
         }
         else {
             const customData = {id, webSocketUrl};
-            console.log(customData)
             const response = {
                 statusCode: 200,
                 headers: {

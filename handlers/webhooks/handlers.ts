@@ -1,8 +1,6 @@
 import dynamodb from '../dynamodb';
 
 exports.connect = function(event, context, callback) {
-    console.log(`** web socket connected! ${event.requestContext.connectionId}`);
-    console.log(JSON.stringify(event));
     var putParams = {
         TableName: process.env.TABLE_WEB_HOOKS,
         Item: {
@@ -28,8 +26,6 @@ exports.connect = function(event, context, callback) {
 };
 
 exports.disconnect = function(event, context, callback) {
-    console.log(`** web socket disconnected...${event.requestContext.connectionId}`);
-    console.log(JSON.stringify(event));
     var deleteParams = {
         TableName: process.env.TABLE_WEB_HOOKS,
         Key: {
@@ -54,7 +50,6 @@ exports.disconnect = function(event, context, callback) {
 };
 
 exports.default = function(event, context, callback) {
-    console.log(`** web socket default: ${event.requestContext.connectionId}`);
     callback(null, {
         statusCode: 200,
         headers: {

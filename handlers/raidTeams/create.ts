@@ -41,7 +41,6 @@ const raidTeamCreate: Handler = (event: APIGatewayProxyEvent, context: Context, 
         }
         else {
             const customData = {id};
-            console.log(customData)
             const response = {
                 statusCode: 200,
                 headers: {

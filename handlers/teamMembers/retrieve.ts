@@ -35,7 +35,6 @@ const retrieveRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context
             callback(err, response)
         }
         else {
-            console.log(data.Items[0])
             const response = {
                 statusCode: 200,
                 headers: {

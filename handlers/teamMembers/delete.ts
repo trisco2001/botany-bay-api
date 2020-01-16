@@ -31,7 +31,6 @@ const deleteRaidTeam: Handler = (event: APIGatewayProxyEvent, context: Context, 
             callback(err, response)
         }
         else {
-            console.log(data)
             const response = {
                 statusCode: 200,
                 headers: {
