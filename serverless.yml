@@ -100,6 +100,7 @@ package:
     - '!node_modules/ms/**'
     - '!node_modules/blizzy-core/**'
     - '!node_modules/uuid/**'
+    - '!node_modules/underscore/**'
 
 functions:
   refreshItemLevels:
