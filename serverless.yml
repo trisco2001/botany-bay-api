@@ -257,6 +257,9 @@ resources:
           -
             AttributeName: id
             AttributeType: S
+          - 
+            AttributeName: friendlyId
+            AttributeType: S
         KeySchema:
           -
             AttributeName: id
@@ -265,6 +268,16 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.TABLE_RAID_TEAMS}
+        GlobalSecondaryIndexes:
+          - IndexName: gsi_friendly_id
+            KeySchema:
+            - AttributeName: friendlyId
+              KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: '5'
+              WriteCapacityUnits: '5'
 
     CharacterMetricsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
