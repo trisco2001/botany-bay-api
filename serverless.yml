@@ -136,6 +136,14 @@ functions:
           method: get
           cors: true
 
+  listTeamMember:
+    handler: handler.listTeamMembers
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/team-members
+          method: get
+          cors: true
+
   retrieveRaidTeam:
     handler: handler.retrieveRaidTeam
     events:
@@ -168,11 +176,11 @@ functions:
           method: post
           cors: true
 
-  listTeamMember:
-    handler: handler.listTeamMembers
+  listTeamMemberMetrics:
+    handler: handlers/metrics/list.handler
     events:
       - http:
-          path: raid-teams/{raidTeamId}/team-members
+          path: raid-teams/{raidTeamId}/team-members/{id}/metrics
           method: get
           cors: true
 
