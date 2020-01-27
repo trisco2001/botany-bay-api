@@ -10,13 +10,14 @@ import { isNullOrUndefined } from "util";
 import { _ } from "underscore";
 
 class CharacterMetricService {
-    saveCharacterMetric(raidTeamMemberId: string, calculatedItemLevel: number) {
+    saveCharacterMetric(raidTeamMemberId: string, raidTeamId: string, calculatedItemLevel: number) {
         console.log(`Saving character metric: ${raidTeamMemberId} - ${calculatedItemLevel}`);
         const timestamp = new Date().getTime();
         const params = {
             TableName: process.env.TABLE_CHARACTER_METRICS,
             Item: {
                 raidTeamMemberId: raidTeamMemberId,
+                raidTeamId: raidTeamId,
                 timestamp: timestamp,
                 averageItemLevel: calculatedItemLevel
             },
@@ -65,10 +66,6 @@ class BotanyBayRaidTeamService {
         const stringifiedA = JSON.stringify(cleansedA);
         const stringifiedB = JSON.stringify(cleansedB);
 
-        console.log("****** ITEMS A *******")
-        console.log(stringifiedA);
-        console.log("****** ITEMS B *******")
-        console.log(stringifiedB);
         return stringifiedA === stringifiedB;
     }
 
@@ -162,15 +159,14 @@ export const handler: Handler = async (event, context, callback) => {
             console.log(`No character info saved. Updating character...`);
             await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
             const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
-            await characterMetricService.saveCharacterMetric(teamMember.id, calculatedItemLevel)
+            await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
         } else {
             if (!_.isEqual(botanyBayRaidTeamService.removeEmpty(teamMember.characterData), botanyBayRaidTeamService.removeEmpty(newCharacterInfo))) {
                 console.log(`New items don't equal old items; updating character`);
                 await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
                 const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
-                await characterMetricService.saveCharacterMetric(teamMember.id, calculatedItemLevel)
+                await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
             } else {
-                const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
                 console.log(`New items too close to old items; skipping character update`);
             }
         }

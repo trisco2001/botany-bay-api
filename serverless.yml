@@ -22,8 +22,8 @@ plugins:
   - serverless-dotenv-plugin
   - serverless-dynamodb-local
   - serverless-offline-dynamodb-streams
-  - serverless-offline
   - serverless-offline-scheduler
+  - serverless-offline
 
 custom:
   dynamodb:
@@ -57,7 +57,7 @@ provider:
     TABLE_WEB_HOOKS: ${self:service}-${opt:stage, self:provider.stage}-WebHookConnections
     TABLE_RAID_TEAMS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeams
     TABLE_RAID_TEAM_MEMBERS: ${self:service}-${opt:stage, self:provider.stage}-RaidTeamMembers
-    TABLE_CHARACTER_METRICS: ${self:service}-${opt:stage, self:provider.stage}-CharacterMetrics
+    TABLE_CHARACTER_METRICS: ${self:service}-${opt:stage, self:provider.stage}-CharacterMetricsV2
     WEB_SOCKET_ENDPOINT_WS: !Join ['', ['wss://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}"]]
     WEB_SOCKET_ENDPOINT_HTTP: !Join ['', ['https://', !Ref WebsocketsApi, '.execute-api.', "${self:provider.region}", '.amazonaws.com/', "${self:provider.stage}/"]]
   resourcePolicy:
@@ -81,6 +81,7 @@ provider:
         - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAMS}"
         - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAMS}/index/*"
         - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_CHARACTER_METRICS}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_CHARACTER_METRICS}/index/*"
         - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TABLE_RAID_TEAM_MEMBERS}"
     - Effect: Allow
       Action:
@@ -105,6 +106,7 @@ package:
     - '!node_modules/underscore/**'
 
 functions:
+    
   refreshItemLevels:
     handler: handlers/characterLookup/refreshItemLevel.handler
     events:
@@ -174,6 +176,14 @@ functions:
       - http:
           path: raid-teams/{raidTeamId}/team-members
           method: post
+          cors: true
+
+  listTeamMetrics:
+    handler: handlers/metrics/listTeam.handler
+    events:
+      - http:
+          path: raid-teams/{raidTeamId}/metrics
+          method: get
           cors: true
 
   listTeamMemberMetrics:
@@ -288,13 +298,16 @@ resources:
               ReadCapacityUnits: '5'
               WriteCapacityUnits: '5'
 
-    CharacterMetricsDynamoDbTable:
+    CharacterMetricsDynamoDbTableV2:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Delete
       Properties:
         AttributeDefinitions:
           -
             AttributeName: raidTeamMemberId
+            AttributeType: S
+          -
+            AttributeName: raidTeamId
             AttributeType: S
           -
             AttributeName: timestamp
@@ -310,6 +323,18 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.TABLE_CHARACTER_METRICS}
+        GlobalSecondaryIndexes:
+          - IndexName: gsi_metrics_raid_team_id
+            KeySchema:
+            - AttributeName: raidTeamId
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: '1'
+              WriteCapacityUnits: '1'
 
     RaidTeamMembersDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
