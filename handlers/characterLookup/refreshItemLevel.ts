@@ -139,6 +139,30 @@ const blizzardCharacterService = new CharacterService(blizzyService);
 const botanyBayRaidTeamService = new BotanyBayRaidTeamService();
 const characterMetricService = new CharacterMetricService();
 
+async function processTeamMember(teamMember) {
+    const characterInfoResponse = await blizzardCharacterService.getCharacterInfo(teamMember.name, teamMember.server);
+    if (characterInfoResponse.statusCode != 200) {
+        return;
+    }
+
+    const newCharacterInfo = JSON.parse(characterInfoResponse.body);
+    if (!teamMember.characterData) {
+        console.log(`No character info saved. Updating character...`);
+        await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
+        const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
+        await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
+    } else {
+        if (!_.isEqual(botanyBayRaidTeamService.removeEmpty(teamMember.characterData), botanyBayRaidTeamService.removeEmpty(newCharacterInfo))) {
+            console.log(`New items don't equal old items; updating character`);
+            await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
+            const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
+            await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
+        } else {
+            console.log(`New items too close to old items; skipping character update`);
+        }
+    }
+}
+
 export const handler: Handler = async (event, context, callback) => {
     // Load all the characters
     const teamMembers = await botanyBayRaidTeamService.loadAllTeamMembers();
@@ -146,30 +170,14 @@ export const handler: Handler = async (event, context, callback) => {
         callback(null, {});
     }
 
-    teamMembers.forEach(async teamMember => {
-        // Get their current items
-        const characterInfoResponse = await blizzardCharacterService.getCharacterInfo(teamMember.name, teamMember.server);
-        if (characterInfoResponse.statusCode != 200) {
-            return;
+    for (const teamMember of teamMembers) {
+        try {
+            await processTeamMember(teamMember);
+        } catch (error) {
+            console.log(`Error processing team member: ${teamMember.name}`);
+            console.log(`${error}`);
         }
+    }
 
-        const newCharacterInfo = JSON.parse(characterInfoResponse.body);
-
-        if (!teamMember.characterData) {
-            console.log(`No character info saved. Updating character...`);
-            await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
-            const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
-            await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
-        } else {
-            if (!_.isEqual(botanyBayRaidTeamService.removeEmpty(teamMember.characterData), botanyBayRaidTeamService.removeEmpty(newCharacterInfo))) {
-                console.log(`New items don't equal old items; updating character`);
-                await botanyBayRaidTeamService.saveCharacterInfoToTeamMember(teamMember.raidTeamId, teamMember.id, newCharacterInfo)
-                const calculatedItemLevel = TeamMemberItemLevelUtility.calculateItemLevel(teamMember.characterData);
-                await characterMetricService.saveCharacterMetric(teamMember.id, teamMember.raidTeamId, calculatedItemLevel)
-            } else {
-                console.log(`New items too close to old items; skipping character update`);
-            }
-        }
-    });
     callback(null, {});
 }
