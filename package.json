@@ -27,7 +27,7 @@
     "@types/uuid": "^3.4.4",
     "axios": "^0.18.1",
     "blizzy-core": "^1.22.0",
-    "underscore": "^1.9.2",
+    "underscore": "^1.12.1",
     "uuid": "^3.3.2"
   }
 }
