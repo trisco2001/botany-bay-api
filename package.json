@@ -21,7 +21,7 @@
     "serverless-plugin-typescript": "^1.1.7",
     "typescript": "^3.4.4",
     "utf-8-validate": "^5.0.2",
-    "ws": "^7.2.1"
+    "ws": "^7.4.6"
   },
   "dependencies": {
     "@types/uuid": "^3.4.4",
